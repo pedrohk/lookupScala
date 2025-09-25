@@ -1,4 +1,4 @@
-class DPK04_Impl {
+object DPK04_Impl {
   val idToName = Map(1 -> "John")
   val nameToEmail = Map("John" -> "john@john.jhon.com")
   val emailToName = Map("john@john.jhon.com" -> "John")
