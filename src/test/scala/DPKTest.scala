@@ -78,4 +78,52 @@ class DPK01Test extends AnyFunSuite with Matchers {
     lookup("unknown") shouldBe None
   }
 
+  test("5. Using Tuple Matching") {
+    val data = List((1, "John", "john@john.jhon.com"))
+
+    def lookup(key: Any): Option[String] = key match {
+      case i: Int => data.find(_._1 == i).map(_._2)
+      case name: String => data.find(_._2 == name).map(_._3).orElse(data.find(_._3 == name).map(_._2))
+    }
+
+    lookup(1) shouldBe Some("John")
+    lookup("John") shouldBe Some("john@john.jhon.com")
+    lookup("john@john.jhon.com") shouldBe Some("John")
+    lookup("other") shouldBe None
+  }
+
+  test("6. BiMap-Like Simulation") {
+    val idToName = Map(1 -> "John")
+    val nameToEmail = Map("John" -> "john@john.jhon.com")
+    val emailToName = nameToEmail.map(_.swap)
+
+    def lookup(key: Any): Option[String] = key match {
+      case i: Int => idToName.get(i)
+      case s: String => nameToEmail.get(s).orElse(emailToName.get(s))
+    }
+
+    lookup(1) shouldBe Some("John")
+    lookup("John") shouldBe Some("john@john.jhon.com")
+    lookup("john@john.jhon.com") shouldBe Some("John")
+    lookup("none") shouldBe None
+  }
+
+  test("7. Trie-Based Prefix Map Lookup") {
+    val data = Map(
+      "id:1" -> "John",
+      "name:John" -> "john@john.jhon.com",
+      "email:john@john.jhon.com" -> "John"
+    )
+
+    def lookup(key: Any): Option[String] = key match {
+      case i: Int => data.get(s"id:$i")
+      case s: String => data.get(s"name:$s").orElse(data.get(s"email:$s"))
+    }
+
+    lookup(1) shouldBe Some("John")
+    lookup("John") shouldBe Some("john@john.jhon.com")
+    lookup("john@john.jhon.com") shouldBe Some("John")
+    lookup("x") shouldBe None
+  }
+
 }
