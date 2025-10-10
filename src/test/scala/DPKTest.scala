@@ -126,4 +126,77 @@ class DPK01Test extends AnyFunSuite with Matchers {
     lookup("x") shouldBe None
   }
 
+  test("8. Strategy Pattern") {
+    trait LookupStrategy:
+      def apply(key: Any): Option[String]
+
+    object IdLookup extends LookupStrategy {
+      val map = Map(1 -> "John")
+
+      def apply(key: Any): Option[String] = key match {
+        case i: Int => map.get(i)
+        case _ => None
+      }
+    }
+
+    object NameLookup extends LookupStrategy {
+      val map = Map("John" -> "john@john.jhon.com")
+
+      def apply(key: Any): Option[String] = map.get(key.toString)
+    }
+
+    object EmailLookup extends LookupStrategy {
+      val map = Map("john@john.jhon.com" -> "John")
+
+      def apply(key: Any): Option[String] = map.get(key.toString)
+    }
+
+    val strategies = List(IdLookup, NameLookup, EmailLookup)
+
+    def lookup(key: Any): Option[String] = strategies.view.flatMap(_.apply(key)).headOption
+
+    lookup(1) shouldBe Some("John")
+    lookup("John") shouldBe Some("john@john.jhon.com")
+    lookup("john@john.jhon.com") shouldBe Some("John")
+    lookup("none") shouldBe None
+  }
+
+  test("9. PartialFunction Chain") {
+    val idLookup: PartialFunction[Any, String] = {
+      case 1 => "John"
+    }
+    val nameLookup: PartialFunction[Any, String] = {
+      case "John" => "john@john.jhon.com"
+    }
+    val emailLookup: PartialFunction[Any, String] = {
+      case "john@john.jhon.com" => "John"
+    }
+
+    val lookupPF = idLookup.orElse(nameLookup).orElse(emailLookup)
+
+    def lookup(key: Any): Option[String] = if (lookupPF.isDefinedAt(key)) Some(lookupPF(key)) else None
+
+    lookup(1) shouldBe Some("John")
+    lookup("John") shouldBe Some("john@john.jhon.com")
+    lookup("john@john.jhon.com") shouldBe Some("John")
+    lookup("invalid") shouldBe None
+  }
+
+  test("10. Index-Based Filtering") {
+    case class Record(id: Int, name: String, email: String)
+    val records = List(Record(1, "John", "john@john.jhon.com"))
+
+    def lookup(key: Any): Option[String] =
+      records.collectFirst {
+        case r if r.id == key => r.name
+        case r if r.name == key => r.email
+        case r if r.email == key => r.name
+      }
+
+    lookup(1) shouldBe Some("John")
+    lookup("John") shouldBe Some("john@john.jhon.com")
+    lookup("john@john.jhon.com") shouldBe Some("John")
+    lookup("none") shouldBe None
+  }
+
 }
